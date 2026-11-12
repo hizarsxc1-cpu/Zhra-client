@@ -1,18 +1,31 @@
 # Zhra Client
 
-A Fabric client-side mod for Minecraft 1.21.0, designed with a Midnight Blue and Electric Cyan interface.
+A lightweight Fabric client-side mod for Minecraft 1.21.0, using a Midnight Blue and Electric Cyan visual identity.
 
-## Planned features
+## Current milestone: HUD foundation
 
-- PvP HUD: keystrokes, CPS, FPS/ping, and armor status
-- Utilities: zoom, toggle sprint/sneak, and crosshair customization
-- HUD editor: configurable position, size, and colors
-- Performance options: reduced visual effects and lightweight settings
+The first implementation currently includes:
 
-## Development
+- Compact ZHRA CLIENT panel
+- Live FPS display
+- Player ping display when connected to a server
+- Player XYZ coordinates
+- WASD keystrokes with pressed-state highlighting
+- H key to toggle the HUD
 
-- Minecraft: 1.21.0
-- Mod loader: Fabric
+## Planned next features
+
+- CPS counter and armor status
+- Zoom and toggle sprint/sneak
+- Crosshair customization
+- HUD editor for position, scale, and colors
+- Optional performance settings and cosmetic additions
+
+## Build requirements
+
+- Minecraft Java Edition: 1.21.0
+- Fabric Loader: 0.15.11 or newer
+- Fabric API: 0.102.0+1.21
 - Java: 21
 
-This project is under development. Features and compatibility will be verified through builds and in-game testing before being marked complete.
+GitHub Actions builds the mod and publishes the JAR as a workflow artifact. The project is still under development; successful compilation and in-game PojavLauncher compatibility must be verified separately.
