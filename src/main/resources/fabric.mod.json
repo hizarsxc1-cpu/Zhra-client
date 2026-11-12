@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "zhra",
+  "version": "${version}",
+  "name": "Zhra Client",
+  "description": "A lightweight PvP HUD and utility client mod with a Midnight Blue and Electric Cyan theme.",
+  "authors": [
+    "Zhra Client"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.zhra.client.ZhraClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.11",
+    "minecraft": "1.21",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
