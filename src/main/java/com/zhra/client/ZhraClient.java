@@ -14,6 +14,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 public final class ZhraClient implements ClientModInitializer {
     static final int NAVY = 0xF0101B35;
     static final int PANEL = 0xE8172948;
@@ -28,6 +31,9 @@ public final class ZhraClient implements ClientModInitializer {
     static boolean zoomEnabled = false;
     static boolean sprintToggle = false;
     static boolean sneakToggle = false;
+    static boolean cpsEnabled = true;
+
+    private static final Deque<Long> LEFT_CLICKS = new ArrayDeque<>();
 
     private static KeyBinding menuKey;
     private static boolean zoomApplied = false;
@@ -63,6 +69,23 @@ public final class ZhraClient implements ClientModInitializer {
         });
     }
 
+    public static void recordLeftClick() {
+        long now = System.currentTimeMillis();
+        LEFT_CLICKS.addLast(now);
+        pruneClicks(now);
+    }
+
+    private static void pruneClicks(long now) {
+        while (!LEFT_CLICKS.isEmpty() && now - LEFT_CLICKS.peekFirst() > 1000L) {
+            LEFT_CLICKS.removeFirst();
+        }
+    }
+
+    private static int getCps() {
+        pruneClicks(System.currentTimeMillis());
+        return LEFT_CLICKS.size();
+    }
+
     private static void updateZoom(MinecraftClient client) {
         if (client.options == null) return;
         if (zoomEnabled && !zoomApplied) {
@@ -80,7 +103,7 @@ public final class ZhraClient implements ClientModInitializer {
     private static void renderHud(MinecraftClient client, DrawContext context) {
         if (client.player == null || client.world == null) return;
 
-        int x = 10, y = 10, width = 142, height = 65;
+        int x = 10, y = 10, width = 142, height = 78;
         context.fill(x, y, x + width, y + height, NAVY);
         context.fill(x, y, x + width, y + 3, CYAN);
         context.fill(x, y + 3, x + width, y + height, PANEL);
@@ -91,10 +114,13 @@ public final class ZhraClient implements ClientModInitializer {
         int ping = getPing(client);
         context.drawTextWithShadow(client.textRenderer,
                 "PING  " + (ping >= 0 ? ping + " ms" : "--"), x + 8, y + 36, WHITE);
+        if (cpsEnabled) {
+            context.drawTextWithShadow(client.textRenderer, "CPS  " + getCps(), x + 8, y + 49, GREEN);
+        }
         context.drawTextWithShadow(client.textRenderer,
                 String.format("XYZ  %d %d %d", (int) client.player.getX(),
                         (int) client.player.getY(), (int) client.player.getZ()),
-                x + 8, y + 49, MUTED);
+                x + 8, y + 62, MUTED);
 
         if (keystrokesEnabled) renderKeystrokes(client, context, x, y + height + 7);
         if (armorEnabled) renderArmor(client, context, x, y + height + 62);
@@ -158,7 +184,7 @@ public final class ZhraClient implements ClientModInitializer {
         protected void init() {
             int left = width / 2 - BUTTON_WIDTH - 8;
             int right = width / 2 + 8;
-            int top = height / 2 - 66;
+            int top = height / 2 - 110;
 
             addToggle("HUD", () -> hudEnabled, value -> hudEnabled = value, left, top);
             addToggle("Keystrokes", () -> keystrokesEnabled, value -> keystrokesEnabled = value, right, top);
@@ -166,9 +192,10 @@ public final class ZhraClient implements ClientModInitializer {
             addToggle("Zoom (30 FOV)", () -> zoomEnabled, value -> zoomEnabled = value, right, top + 29);
             addToggle("Toggle Sprint", () -> sprintToggle, value -> sprintToggle = value, left, top + 58);
             addToggle("Toggle Sneak", () -> sneakToggle, value -> sneakToggle = value, right, top + 58);
+            addToggle("CPS Counter", () -> cpsEnabled, value -> cpsEnabled = value, left, top + 87);
 
             addDrawableChild(ButtonWidget.builder(Text.literal("CLOSE"), button -> close())
-                    .dimensions(width / 2 - 75, top + 100, 150, 22).build());
+                    .dimensions(width / 2 - 75, top + 124, 150, 22).build());
         }
 
         private void addToggle(String label, java.util.function.BooleanSupplier getter,
@@ -187,7 +214,7 @@ public final class ZhraClient implements ClientModInitializer {
         @Override
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
             renderBackground(context, mouseX, mouseY, delta);
-            int panelWidth = 344, panelHeight = 220;
+            int panelWidth = 344, panelHeight = 250;
             int x = width / 2 - panelWidth / 2, y = height / 2 - panelHeight / 2;
             context.fill(x, y, x + panelWidth, y + panelHeight, NAVY);
             context.fill(x, y, x + panelWidth, y + 3, CYAN);
