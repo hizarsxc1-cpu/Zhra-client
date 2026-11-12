@@ -4,7 +4,8 @@
   "package": "com.zhra.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "MouseMixin"
+    "MouseMixin",
+    "CrosshairMixin"
   ],
   "injectors": {
     "defaultRequire": 1
