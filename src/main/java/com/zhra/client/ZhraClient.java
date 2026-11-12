@@ -11,6 +11,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.item.ItemStack;
+import net.minecraft.particle.ParticlesMode;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
@@ -32,12 +33,27 @@ public final class ZhraClient implements ClientModInitializer {
     static boolean sprintToggle = false;
     static boolean sneakToggle = false;
     static boolean cpsEnabled = true;
+    static boolean customCrosshair = true;
+    static boolean performanceMode = false;
 
+    static int hudX = 10;
+    static int hudY = 10;
+    static float hudScale = 1.0f;
+    static int crosshairSize = 5;
+    static int crosshairGap = 3;
+    static int crosshairColor = 0xFF28D7F2;
+
+    private static final int[] CROSSHAIR_COLORS = {
+            0xFF28D7F2, 0xFFFFFFFF, 0xFFFF5555, 0xFF55E6A5, 0xFFFFFF55
+    };
+    private static int colorIndex = 0;
     private static final Deque<Long> LEFT_CLICKS = new ArrayDeque<>();
 
     private static KeyBinding menuKey;
     private static boolean zoomApplied = false;
     private static int originalFov = 70;
+    private static int originalViewDistance = -1;
+    private static ParticlesMode originalParticles = null;
 
     @Override
     public void onInitializeClient() {
@@ -62,6 +78,7 @@ public final class ZhraClient implements ClientModInitializer {
                 client.player.setSneaking(sneakToggle || client.options.sneakKey.isPressed());
             }
             updateZoom(client);
+            updatePerformance(client);
         });
 
         HudRenderCallback.EVENT.register((drawContext, tickCounter) -> {
@@ -100,16 +117,36 @@ public final class ZhraClient implements ClientModInitializer {
         }
     }
 
-    private static void renderHud(MinecraftClient client, DrawContext context) {
-        if (client.player == null || client.world == null) return;
+    private static void updatePerformance(MinecraftClient client) {
+        if (client.options == null) return;
+        if (performanceMode && originalViewDistance < 0) {
+            originalViewDistance = client.options.getViewDistance().getValue();
+            originalParticles = client.options.getParticles().getValue();
+        }
+        if (performanceMode) {
+            client.options.getViewDistance().setValue(Math.min(originalViewDistance, 6));
+            client.options.getParticles().setValue(ParticlesMode.MINIMAL);
+        } else if (originalViewDistance >= 0) {
+            client.options.getViewDistance().setValue(originalViewDistance);
+            if (originalParticles != null) client.options.getParticles().setValue(originalParticles);
+            originalViewDistance = -1;
+            originalParticles = null;
+        }
+    }
 
-        int x = 10, y = 10, width = 142, height = 78;
+    private static void renderHud(MinecraftClient client, DrawContext context) {
+        if (client.player == null || client.world == null || client.options.hudHidden) return;
+
+        context.getMatrices().push();
+        context.getMatrices().translate(hudX, hudY, 0);
+        context.getMatrices().scale(hudScale, hudScale, 1.0f);
+
+        int x = 0, y = 0, width = 142, height = 78;
         context.fill(x, y, x + width, y + height, NAVY);
         context.fill(x, y, x + width, y + 3, CYAN);
         context.fill(x, y + 3, x + width, y + height, PANEL);
         context.drawTextWithShadow(client.textRenderer, "ZHRA CLIENT", x + 8, y + 8, CYAN);
-        context.drawTextWithShadow(client.textRenderer,
-                "FPS  " + client.getCurrentFps(), x + 8, y + 23, WHITE);
+        context.drawTextWithShadow(client.textRenderer, "FPS  " + client.getCurrentFps(), x + 8, y + 23, WHITE);
 
         int ping = getPing(client);
         context.drawTextWithShadow(client.textRenderer,
@@ -124,6 +161,21 @@ public final class ZhraClient implements ClientModInitializer {
 
         if (keystrokesEnabled) renderKeystrokes(client, context, x, y + height + 7);
         if (armorEnabled) renderArmor(client, context, x, y + height + 62);
+        context.getMatrices().pop();
+    }
+
+    public static void renderCustomCrosshair(DrawContext context) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (!customCrosshair || client.player == null || client.currentScreen != null || client.options.hudHidden) return;
+        int centerX = client.getWindow().getScaledWidth() / 2;
+        int centerY = client.getWindow().getScaledHeight() / 2;
+        int s = crosshairSize;
+        int g = crosshairGap;
+        int t = 2;
+        context.fill(centerX - t / 2, centerY - g - s, centerX + (t + 1) / 2, centerY - g, crosshairColor);
+        context.fill(centerX - t / 2, centerY + g + 1, centerX + (t + 1) / 2, centerY + g + s + 1, crosshairColor);
+        context.fill(centerX - g - s, centerY - t / 2, centerX - g, centerY + (t + 1) / 2, crosshairColor);
+        context.fill(centerX + g + 1, centerY - t / 2, centerX + g + s + 1, centerY + (t + 1) / 2, crosshairColor);
     }
 
     private static int getPing(MinecraftClient client) {
@@ -174,7 +226,7 @@ public final class ZhraClient implements ClientModInitializer {
 
     static final class ZhraMenuScreen extends Screen {
         private static final int BUTTON_WIDTH = 150;
-        private static final int BUTTON_HEIGHT = 22;
+        private static final int BUTTON_HEIGHT = 20;
 
         ZhraMenuScreen() {
             super(Text.literal("Zhra Client"));
@@ -184,18 +236,46 @@ public final class ZhraClient implements ClientModInitializer {
         protected void init() {
             int left = width / 2 - BUTTON_WIDTH - 8;
             int right = width / 2 + 8;
-            int top = height / 2 - 110;
+            int top = height / 2 - 116;
 
             addToggle("HUD", () -> hudEnabled, value -> hudEnabled = value, left, top);
             addToggle("Keystrokes", () -> keystrokesEnabled, value -> keystrokesEnabled = value, right, top);
-            addToggle("Armor Status", () -> armorEnabled, value -> armorEnabled = value, left, top + 29);
-            addToggle("Zoom (30 FOV)", () -> zoomEnabled, value -> zoomEnabled = value, right, top + 29);
-            addToggle("Toggle Sprint", () -> sprintToggle, value -> sprintToggle = value, left, top + 58);
-            addToggle("Toggle Sneak", () -> sneakToggle, value -> sneakToggle = value, right, top + 58);
-            addToggle("CPS Counter", () -> cpsEnabled, value -> cpsEnabled = value, left, top + 87);
+            addToggle("Armor Status", () -> armorEnabled, value -> armorEnabled = value, left, top + 25);
+            addToggle("Zoom (30 FOV)", () -> zoomEnabled, value -> zoomEnabled = value, right, top + 25);
+            addToggle("Toggle Sprint", () -> sprintToggle, value -> sprintToggle = value, left, top + 50);
+            addToggle("Toggle Sneak", () -> sneakToggle, value -> sneakToggle = value, right, top + 50);
+            addToggle("CPS Counter", () -> cpsEnabled, value -> cpsEnabled = value, left, top + 75);
+            addToggle("Custom Crosshair", () -> customCrosshair, value -> customCrosshair = value, right, top + 75);
+            addToggle("Performance Mode", () -> performanceMode, value -> performanceMode = value, left, top + 100);
+
+            addAction("Crosshair Color", "CHANGE", () -> {
+                colorIndex = (colorIndex + 1) % CROSSHAIR_COLORS.length;
+                crosshairColor = CROSSHAIR_COLORS[colorIndex];
+            }, right, top + 100);
+            addAction("Crosshair Size", crosshairSize + " px", () -> {
+                crosshairSize = crosshairSize >= 9 ? 3 : crosshairSize + 2;
+                clearAndInit();
+            }, left, top + 125);
+            addAction("HUD Scale", Math.round(hudScale * 100) + "%", () -> {
+                hudScale = hudScale >= 1.4f ? 0.8f : hudScale + 0.2f;
+                clearAndInit();
+            }, right, top + 125);
+            addAction("HUD Position", "LEFT", () -> {
+                hudX = hudX > 20 ? 10 : Math.min(120, hudX + 30);
+                clearAndInit();
+            }, left, top + 150);
+            addAction("HUD Position", "UP / DOWN", () -> {
+                hudY = hudY > 20 ? 10 : Math.min(120, hudY + 30);
+                clearAndInit();
+            }, right, top + 150);
 
             addDrawableChild(ButtonWidget.builder(Text.literal("CLOSE"), button -> close())
-                    .dimensions(width / 2 - 75, top + 124, 150, 22).build());
+                    .dimensions(width / 2 - 75, top + 178, 150, 20).build());
+        }
+
+        private void clearAndInit() {
+            clearChildren();
+            init();
         }
 
         private void addToggle(String label, java.util.function.BooleanSupplier getter,
@@ -207,6 +287,11 @@ public final class ZhraClient implements ClientModInitializer {
             addDrawableChild(button);
         }
 
+        private void addAction(String label, String value, Runnable action, int x, int y) {
+            addDrawableChild(ButtonWidget.builder(Text.literal(label + "  [" + value + "]"), b -> action.run())
+                    .dimensions(x, y, BUTTON_WIDTH, BUTTON_HEIGHT).build());
+        }
+
         private Text toggleText(String label, boolean enabled) {
             return Text.literal(label + "  [" + (enabled ? "ON" : "OFF") + "]");
         }
@@ -214,17 +299,16 @@ public final class ZhraClient implements ClientModInitializer {
         @Override
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
             renderBackground(context, mouseX, mouseY, delta);
-            int panelWidth = 344, panelHeight = 250;
+            int panelWidth = 344, panelHeight = 228;
             int x = width / 2 - panelWidth / 2, y = height / 2 - panelHeight / 2;
             context.fill(x, y, x + panelWidth, y + panelHeight, NAVY);
             context.fill(x, y, x + panelWidth, y + 3, CYAN);
-            context.drawCenteredTextWithShadow(textRenderer, "ZHRA CLIENT", width / 2, y + 15, CYAN);
+            context.drawCenteredTextWithShadow(textRenderer, "ZHRA CLIENT", width / 2, y + 8, CYAN);
             context.drawCenteredTextWithShadow(textRenderer, "MIDNIGHT BLUE  /  ELECTRIC CYAN",
-                    width / 2, y + 31, MUTED);
-            context.drawCenteredTextWithShadow(textRenderer, "FEATURES", width / 2, y + 53, WHITE);
+                    width / 2, y + 22, MUTED);
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(textRenderer, "RIGHT SHIFT: OPEN / CLOSE MENU",
-                    width / 2, y + panelHeight - 18, MUTED);
+                    width / 2, y + panelHeight - 12, MUTED);
         }
 
         @Override
