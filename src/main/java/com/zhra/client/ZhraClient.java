@@ -11,7 +11,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.item.ItemStack;
-import net.minecraft.particle.ParticlesMode;
+import net.minecraft.client.option.ParticlesMode;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
