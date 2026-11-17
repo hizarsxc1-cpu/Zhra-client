@@ -164,7 +164,11 @@ public final class ZhraClient implements ClientModInitializer {
         context.getMatrices().pop();
     }
 
-    public static boolean isCustomCrosshairEnabled() {\n        return customCrosshair;\n    }\n\n    public static void renderCustomCrosshair(DrawContext context) {
+    public static boolean isCustomCrosshairEnabled() {
+        return customCrosshair;
+    }
+
+    public static void renderCustomCrosshair(DrawContext context) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (!customCrosshair || client.player == null || client.currentScreen != null || client.options.hudHidden) return;
         int centerX = client.getWindow().getScaledWidth() / 2;
