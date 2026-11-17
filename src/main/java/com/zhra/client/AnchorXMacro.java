@@ -79,7 +79,7 @@ public final class AnchorXMacro implements ClientModInitializer {
             reset();
             return;
         }
-        client.player.getInventory().setSelectedSlot(anchorSlot);
+        client.player.getInventory().selectedSlot = anchorSlot;
         client.interactionManager.interactBlock(client.player, Hand.MAIN_HAND, hit);
         client.player.swingHand(Hand.MAIN_HAND);
         step = 2;
@@ -91,7 +91,7 @@ public final class AnchorXMacro implements ClientModInitializer {
             reset();
             return;
         }
-        client.player.getInventory().setSelectedSlot(glowstoneSlot);
+        client.player.getInventory().selectedSlot = glowstoneSlot;
         BlockHitResult hit = new BlockHitResult(
                 Vec3d.ofCenter(anchorPos), Direction.UP, anchorPos, false
         );
@@ -125,7 +125,7 @@ public final class AnchorXMacro implements ClientModInitializer {
             return;
         }
 
-        client.player.getInventory().setSelectedSlot(triggerSlot);
+        client.player.getInventory().selectedSlot = triggerSlot;
         BlockHitResult hit = new BlockHitResult(
                 Vec3d.ofCenter(anchorPos), Direction.UP, anchorPos, false
         );
