@@ -68,9 +68,8 @@ public final class AnchorXMacro implements ClientModInitializer {
         glowstoneSlot = findHotbar(client, Items.GLOWSTONE);
         if (anchorSlot < 0 || glowstoneSlot < 0) return;
 
+        // The anchor is placed in the adjacent block selected by the hit face.
         anchorPos = hit.getBlockPos().offset(hit.getSide());
-        // Use the actual crosshair hit so Minecraft validates the placement normally.
-        anchorPos = hit.getBlockPos();
         step = 1;
         waitTicks = 0;
     }
