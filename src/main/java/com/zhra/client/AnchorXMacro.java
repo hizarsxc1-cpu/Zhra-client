@@ -22,6 +22,7 @@ public final class AnchorXMacro implements ClientModInitializer {
     private static int step = 0;
     private static int waitTicks = 0;
     private static BlockPos anchorPos;
+    private static BlockHitResult placementHit;
     private static int anchorSlot = -1;
     private static int glowstoneSlot = -1;
     private static int triggerSlot = -1;
@@ -69,18 +70,19 @@ public final class AnchorXMacro implements ClientModInitializer {
         if (anchorSlot < 0 || glowstoneSlot < 0) return;
 
         // The anchor is placed in the adjacent block selected by the hit face.
+        placementHit = hit;
         anchorPos = hit.getBlockPos().offset(hit.getSide());
         step = 1;
         waitTicks = 0;
     }
 
     private static void placeAnchor(MinecraftClient client) {
-        if (!(client.crosshairTarget instanceof BlockHitResult hit)) {
+        if (placementHit == null) {
             reset();
             return;
         }
         client.player.getInventory().selectedSlot = anchorSlot;
-        client.interactionManager.interactBlock(client.player, Hand.MAIN_HAND, hit);
+        client.interactionManager.interactBlock(client.player, Hand.MAIN_HAND, placementHit);
         client.player.swingHand(Hand.MAIN_HAND);
         step = 2;
         waitTicks = 1;
@@ -154,6 +156,7 @@ public final class AnchorXMacro implements ClientModInitializer {
         step = 0;
         waitTicks = 0;
         anchorPos = null;
+        placementHit = null;
         anchorSlot = -1;
         glowstoneSlot = -1;
         triggerSlot = -1;
