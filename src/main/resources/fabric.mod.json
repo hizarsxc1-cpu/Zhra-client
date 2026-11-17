@@ -1,18 +1,14 @@
 {
   "schemaVersion": 1,
-  "id": "zhra",
+  "id": "anchorx",
   "version": "${version}",
-  "name": "Zhra Client",
-  "description": "A lightweight PvP HUD and utility client mod with a Midnight Blue and Electric Cyan theme.",
-  "authors": [
-    "Zhra Client"
-  ],
+  "name": "AnchorX Macro",
+  "description": "Standalone AnchorX macro for Minecraft 1.21 Fabric.",
+  "authors": ["AnchorX"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "com.zhra.client.ZhraClient",
-      "com.zhra.client.StrawHatRenderer",
       "com.zhra.client.AnchorXMacro"
     ]
   },
@@ -21,8 +17,5 @@
     "minecraft": "1.21",
     "java": ">=21",
     "fabric-api": "*"
-  },
-  "mixins": [
-    "zhra.mixins.json"
-  ]
+  }
 }
