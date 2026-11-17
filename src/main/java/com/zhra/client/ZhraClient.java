@@ -277,7 +277,7 @@ public final class ZhraClient implements ClientModInitializer {
                     .dimensions(width / 2 - 75, top + 178, 150, 20).build());
         }
 
-        private void clearAndInit() {
+        protected void clearAndInit() {
             clearChildren();
             init();
         }
